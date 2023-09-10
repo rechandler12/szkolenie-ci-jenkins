@@ -1,8 +1,8 @@
-= Szkolenie CI/CD z wykorzystaniem Jenkinsa i GitLaba
+= Continuous Integration z wykorzystaniem Jenkins
 :author: Juliusz Marciniak
 :imagesdir: ./images
 
-Szkolenie z podstaw CI/CD. Po szkoleniu będziecie wiedzieć, czym jest CI/CD. Nauczycie się definiować pipeline w narzędziu Jenkins i GitLab.
+Continuous Integration (CI) to praktyka w dziedzinie rozwoju oprogramowania, która polega na regularnym, częstym łączeniu zmian dokonywanych przez programistów w centralnym repozytorium. Zdobędziecie wiedzę i umiejętności związane z implementacją tej praktyki przy użyciu narzędzia Jenkins, które jest jednym z popularnych narzędzi do automatyzacji procesów CI/CD.
 
 == O trenerze
 
@@ -21,31 +21,41 @@ Technologie:
 Jestem programistą Java z 10-letnim stażem. W codziennej pracy zajmuję się tematami cloudowymi i Kubernetesowymi. Oprócz tego doglądam architektury aplikacji w swoich projektach. Jestem entuzjastą nowych rozwiązań i technologii. Zwracam dużą uwagę, by rzeczy wdrażane przeze mnie były przemyślane i spójne. Czasami też programuję... i rekrutuję.
 
 == Agenda
+// === Dzień 1
+// . Wstęp do CI/CD
+// . DevOps
+// . Narzędzia CI/CD
+// . Jenkins
+// .. Wprowadzenie
+// .. Architektura
+// .. Instalacja i konfiguracja
+// .. Zadania
+// .. Pluginy
+// .. Notyfikacje
+// . Integracja z Git
+// . Integracja z Maven
+// . Definiowanie przepływu pracy przy pomocy kodu
+//
+// === Dzień 2
+// . Definiowanie przepływu pracy przy pomocy kodu
+// . Testowanie
+// . Jenkins security
+// . Jenkins w kontekście Infrastruktury jako kodu (IaC)
+// . Jenkins w kontekście pracy z AWS
 === Dzień 1
-. Podstawy teoretyczne
-. Narzędzia do CI/CD — dlaczego wybieramy konkretne rozwiązania, GitLab/Bamboo/Jenkins
-. Jenkins
-.. Podstawy teoretyczne
-.. Instalacja i konfiguracja
-.. Pluginy
-.. Deklarowanie pipeline
-. GitLab Runner
-.. Instalacja i konfiguracja
-.. Porównanie z Jenkinsem
-.. Deklarowanie pipeline
+. Co to jest CI/CD?
+. Dlaczego CI/CD jest ważne?
+. Architektura Jenkinsa
+. Instalacja i konfiguracja Jenkinsa
+. Tworzenie projektów (jobs, konfiguracja repozytorium, skrypty budowania i testowania)
+. Pipeliny (deklaratywne i skryptowe)
 
 === Dzień 2
-. Nexus
-.. Podstawy teoretyczne
-.. Instalacja i konfiguracja
-. Integracja narzędzi w spójny sposób
-. Wstęp do CI/CD w chmurze
-
-=== Dzień 3
-[IMPORTANT]
-To są przykładowe problemy, możliwe, że części z nich nie zdążymy omówić, a może będziemy dokładać.
-
-. Warsztat na faktycznych problemach organizacji
+. Integracja z narzędziami zewnętrznymi m.in. git, maven gradle
+. Powiadomienia
+. Jak zautomatyzować proces wdrażania
+. Wdrażanie na różne środowiska (testowe, produkcyjne)
+. Bezpieczeństwo i zarządzanie uprawnieniami
 
 == Zasady
 * Staramy się nie spóźniać
@@ -61,7 +71,3 @@ To są przykładowe problemy, możliwe, że części z nich nie zdążymy omówi
 include::theory/README.adoc[leveloffset=1]
 
 include::jenkins/README.adoc[leveloffset=1]
-
-include::gitlab/README.adoc[leveloffset=1]
-
-include::nexus/README.adoc[leveloffset=1]
