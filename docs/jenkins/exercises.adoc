@@ -83,27 +83,155 @@ pipeline {
 . Uruchom pipeline dwukrotnie
 . Sprawdź co znajduje się w workspace
 
+==== Rozwiązanie
+
+[source,groovy]
+----
+pipeline {
+    agent any
+
+    stages {
+        stage('Build') {
+            steps {
+                sh 'uuidgen | xargs touch'
+            }
+        }
+    }
+}
+----
+
 === Zadanie 3. Wyczyszczenie Workspace
 
 . Zmodyfikuj pipeline z poprzedniego zadania, dodając krok czyszczący Workspace, używając pluginu Workspace Cleanup
 . Uruchom pipeline dwukrotnie
 . Sprawdź co znajduje się w workspace
 
+==== Rozwiązanie
+
+[source,groovy]
+----
+pipeline {
+    agent any
+
+    stages {
+        stage('Build') {
+            steps {
+                cleanWs()
+                sh 'uuidgen | xargs touch'
+            }
+        }
+    }
+}
+----
+
 === Zadanie 4. Budowanie aplikacji Spring Boot
 
 . Stwórz nowy pipeline o nazwie `pet-clinic-build`
 . Na podstawie pipeline poprzedniego zadania stwórz pipeline, który za pomocą komendy `mvn clean verify` zbuduje projekt https://github.com/spring-projects/spring-petclinic[pet-clinic]
+
+==== Rozwiązanie
+
+[source,groovy]
+----
+pipeline {
+    agent any
+
+    tools {
+        jdk 'jdk-17'
+        maven 'maven-3'
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                cleanWs()
+                git branch: 'main', url: 'https://github.com/spring-projects/spring-petclinic.git'
+                sh 'mvn clean verify'
+            }
+        }
+    }
+}
+----
 
 === Zadanie 5. Testy
 
 . Zmodyfikuj pipeline z poprzedniego zadania dodając do niego obsługę JUnit
 . Uruchom pipeline
 . Obejrzyj jak wyglądają testy JUnit
-. Uruchom pipeline
+
+==== Rozwiązanie
+
+[source,groovy]
+----
+pipeline {
+    agent any
+
+    tools {
+        jdk 'jdk-17'
+        maven 'maven-3'
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                cleanWs()
+                git branch: 'main', url: 'https://github.com/spring-projects/spring-petclinic.git'
+                sh 'mvn clean verify'
+            }
+        }
+    }
+
+    post {
+        always {
+            junit allowEmptyResults: true, testResults: '**/target/**/TEST-*.xml'
+        }
+    }
+}
+----
 
 === Zadanie 6. Podział na stage
 
 . Napisany przez siebie pipeline z poprzedniego zadania podziel na 3 stage: ['Clean', 'Checkout', 'Build']
+
+==== Rozwiązanie
+
+[source,groovy]
+----
+pipeline {
+    agent any
+
+    tools {
+        jdk 'jdk-17'
+        maven 'maven-3'
+    }
+
+    stages {
+        stage('Clean') {
+            steps {
+                cleanWs()
+            }
+        }
+
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/spring-projects/spring-petclinic.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'mvn clean verify'
+            }
+        }
+    }
+
+    post {
+        always {
+            junit allowEmptyResults: true, testResults: '**/target/**/TEST-*.xml'
+        }
+    }
+}
+----
 
 === Zdanie 7. Notyfikacja na Slacku
 
@@ -113,6 +241,57 @@ pipeline {
 . Uruchom pipeline
 . Sprawdź, czy notyfikacja została wysłana
 . Zmodyfikuj pipeline w taki sposób, żeby komunikat na Slacka zawierał parametry `BUILD_TAG` i `BUILD_URL`
+
+==== Rozwiązanie
+
+[source,groovy]
+----
+pipeline {
+    agent any
+
+    tools {
+        jdk 'jdk-17'
+        maven 'maven-3'
+    }
+
+    stages {
+        stage('Clean') {
+            steps {
+                cleanWs()
+            }
+        }
+
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/spring-projects/spring-petclinic.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'mvn clean verify'
+            }
+        }
+    }
+
+    post {
+        always {
+            notify(":heart_eyes: build *${env.$BUILD_TAG}* has ended (<${env.BUILD_URL}|Open>)")
+            junit allowEmptyResults: true, testResults: '**/target/**/TEST-*.xml'
+        }
+    }
+}
+
+def notify(def color = 'good', def message) {
+    slackSend(
+            channel: 'jenkins-imie-nazwisko',
+            color: color,
+            message: message,
+            tokenCredentialId: 'slack-token',
+            username: 'Jenkins-Backend'
+    )
+}
+----
 
 === Zadanie 8. Zmienne środowiskowe
 
@@ -130,11 +309,58 @@ pipeline {
 . Zmień credentiale ze zmiennych środowiskowych na dyrektywę `withCredentials`
 . Uruchom pipeline
 
+==== Rozwiązanie
+
+[source,groovy]
+----
+pipeline {
+    agent any
+
+    environment {
+        CURL_CREDS = credentials('credentials')
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                sh 'curl -i -u "$CURL_CREDS_USR:$CURL_CREDS_PSW" https://httpbin.org/basic-auth/foo/bar'
+                withCredentials([usernamePassword(credentialsId: 'credentials', passwordVariable: 'password', usernameVariable: 'username')]) {
+                    sh 'curl -i -u "$username:$password" https://httpbin.org/basic-auth/foo/bar'
+                }
+            }
+        }
+    }
+}
+----
+
 === Zadanie 9. Parametry wejściowe
 
 . Stwórz nowy pipeline o nazwie `base-echo-with-parameters`
 . Dodaj parametr wejściowy do pipeline
 . Wyświetl parametr wejściowy w konsoli (jak w Zadaniu 1)
+
+==== Rozwiązanie
+
+[source,groovy]
+----
+pipeline {
+    agent any
+
+    parameters {
+        string name: 'Example',
+                description: 'Example',
+                trim: true
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                sh "echo ${params.RELEASE}"
+            }
+        }
+    }
+}
+----
 
 == Pipeline wewnątrz repozytorium
 
@@ -158,14 +384,202 @@ pipeline {
 . Uruchom pipeline
 . Sprawdź w logach czy kroki się wykonały
 
+==== Rozwiązanie
+
+[source,groovy]
+----
+pipeline {
+    agent any
+
+    tools {
+        jdk 'jdk-17'
+        maven 'maven-3'
+    }
+
+    stages {
+        stage('Clean') {
+            when {
+                not {
+                    changelog '.*^\\[ci skip\\] .+$'
+                }
+            }
+            steps {
+                cleanWs()
+            }
+        }
+
+        stage('Checkout') {
+            when {
+                not {
+                    changelog '.*^\\[ci skip\\] .+$'
+                }
+            }
+            steps {
+                git branch: 'main', url: 'https://github.com/spring-projects/spring-petclinic.git'
+            }
+        }
+
+        stage('Build') {
+            when {
+                not {
+                    changelog '.*^\\[ci skip\\] .+$'
+                }
+            }
+            steps {
+                sh 'mvn clean verify'
+            }
+        }
+    }
+
+    post {
+        always {
+            notify(":heart_eyes: build *${env.$BUILD_TAG}* has ended (<${env.BUILD_URL}|Open>)")
+            junit allowEmptyResults: true, testResults: '**/target/**/TEST-*.xml'
+        }
+    }
+}
+
+def notify(def color = 'good', def message) {
+    slackSend(
+            channel: 'jenkins-imie-nazwisko',
+            color: color,
+            message: message,
+            tokenCredentialId: 'slack-token',
+            username: 'Jenkins-Backend'
+    )
+}
+----
+
 === Zadanie 4. SCM Skip Plugin
 
 . Zrób to samo co w poprzednim zadaniu, ale z użyciem pluginu SCM Skip
+
+==== Rozwiązanie
+
+[source,groovy]
+----
+pipeline {
+    agent any
+
+    tools {
+        jdk 'jdk-17'
+        maven 'maven-3'
+    }
+
+    stages {
+        stage('Clean') {
+            steps {
+                scmSkip(deleteBuild: true, skipPattern:'.*\\[ci skip\\].*')
+                cleanWs()
+            }
+        }
+
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/spring-projects/spring-petclinic.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'mvn clean verify'
+            }
+        }
+    }
+
+    post {
+        always {
+            notify(":heart_eyes: build *${env.$BUILD_TAG}* has ended (<${env.BUILD_URL}|Open>)")
+            junit allowEmptyResults: true, testResults: '**/target/**/TEST-*.xml'
+        }
+    }
+}
+
+def notify(def color = 'good', def message) {
+    slackSend(
+            channel: 'jenkins-imie-nazwisko',
+            color: color,
+            message: message,
+            tokenCredentialId: 'slack-token',
+            username: 'Jenkins-Backend'
+    )
+}
+----
 
 === Zadanie 5. Triggery
 
 . Dodaj do któregoś z poprzednich pipeline trigger, który będzie wywoływał ten pipeline co 1 minutę
 . Sprawdź efekty
+
+==== Rozwiązanie
+
+[source,groovy]
+----
+pipeline {
+    agent any
+
+    triggers {
+        cron('H/1 * * * *')
+    }
+
+    tools {
+        jdk 'jdk-17'
+        maven 'maven-3'
+    }
+
+    stages {
+        stage('Clean') {
+            when {
+                not {
+                    changelog '.*^\\[ci skip\\] .+$'
+                }
+            }
+            steps {
+                cleanWs()
+            }
+        }
+
+        stage('Checkout') {
+            when {
+                not {
+                    changelog '.*^\\[ci skip\\] .+$'
+                }
+            }
+            steps {
+                git branch: 'main', url: 'https://github.com/spring-projects/spring-petclinic.git'
+            }
+        }
+
+        stage('Build') {
+            when {
+                not {
+                    changelog '.*^\\[ci skip\\] .+$'
+                }
+            }
+            steps {
+                sh 'mvn clean verify'
+            }
+        }
+    }
+
+    post {
+        always {
+            notify(":heart_eyes: build *${env.$BUILD_TAG}* has ended (<${env.BUILD_URL}|Open>)")
+            junit allowEmptyResults: true, testResults: '**/target/**/TEST-*.xml'
+        }
+    }
+}
+
+def notify(def color = 'good', def message) {
+    slackSend(
+            channel: 'jenkins-imie-nazwisko',
+            color: color,
+            message: message,
+            tokenCredentialId: 'slack-token',
+            username: 'Jenkins-Backend'
+    )
+}
+----
 
 === Zadanie 6. Active Choices i Scriptler
 
@@ -184,11 +598,62 @@ pipeline {
 . Uruchom pipeline
 . Spójrz w logi spróbuj doprowadzić go do działania
 
+==== Rozwiązanie
+
+[source,bash]
+----
+sudo usermod -aG docker jenkins
+sudo systemctl restart jenkins
+----
+
+[source,groovy]
+----
+pipeline {
+    agent any
+
+    tools {
+        jdk 'jdk-17'
+        maven 'maven-3'
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                cleanWs()
+                git branch: 'main', url: 'https://github.com/rechandler12/szkolenie-ci-jenkins-example.git'
+                sh 'mvn clean spring-boot:build-image'
+            }
+        }
+    }
+}
+----
+
 === Zadanie 2. Zbuduj obraz Dockerowy za pomocą pluginu
 
 . Stwórz pipeline o nazwie `docker-simple-build`
 . Użyj Dockerfile z https://github.com/rechandler12/szkolenie-ci-jenkins katalog `docker-pipeline`
 . Zbuduj obraz dockerowy za pomocą pluginu https://plugins.jenkins.io/docker-workflow/[Docker Pipeline]
+
+[source,groovy]
+----
+pipeline {
+    agent any
+
+    stages {
+        stage('Build') {
+            steps {
+                cleanWs()
+                git branch: 'main', url: 'https://github.com/rechandler12/szkolenie-ci-jenkins'
+                dir('docker-pipeline') {
+                    script {
+                        docker.build 'pipeline-image:snapshot'
+                    }
+                }
+            }
+        }
+    }
+}
+----
 
 === Zadanie 3. Użyj Docker Agenta do zbudowania aplikacji pet-clinic
 
@@ -197,12 +662,58 @@ pipeline {
 . Usuń sekcję tools
 . Zmień sekcję agents, żeby użyć obrazu: `maven:3.9.2-eclipse-temurin-17`
 
+==== Rozwiązanie
+
+[source,groovy]
+----
+pipeline {
+    agent { docker('maven:3.9.2-eclipse-temurin-17') }
+
+    stages {
+        stage('Build') {
+            steps {
+                git branch: 'main', url: 'https://github.com/rechandler12/szkolenie-ci-jenkins-example.git'
+                sh 'mvn clean verify'
+            }
+        }
+    }
+}
+----
+
 === Zadanie 4. Użyj Docker Agenta do zbudowania obrazu Dockerowego aplikacji pet-clinic
 
 . Stwórz pipeline o nazwie `pet-clinic-build-docker-with-dind`
 . Użyj pipeline z poprzedniego zadania
 . Zmień komendę `mvn clean verify` na `mvn clean spring-boot:build-image`
 . Spróbuj doprowadzić do tego, żeby obraz się zbudował
+
+==== Rozwiązanie
+
+[source,bash]
+----
+sudo chmod 777 /var/run/docker.sock
+----
+
+[source,groovy]
+----
+pipeline {
+    agent {
+        docker {
+            image 'maven:3.9.2-eclipse-temurin-17'
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                git branch: 'main', url: 'https://github.com/rechandler12/szkolenie-ci-jenkins-example.git'
+                sh 'mvn clean spring-boot:build-image'
+            }
+        }
+    }
+}
+----
 
 == Konfiguracja dodatkowego Workera
 
@@ -231,6 +742,24 @@ pipeline {
 . Usuń worker z tą labelką
 . Ponownie uruchom pipeline
 . Jaki efekt otrzymałeś?
+
+==== Rozwiązanie
+
+[source,groovy]
+----
+pipeline {
+    agent { label 'workerA' }
+
+    stages {
+        stage('Build') {
+            steps {
+                git branch: 'main', url: 'https://github.com/rechandler12/szkolenie-ci-jenkins-example.git'
+                sh 'mvn clean verify'
+            }
+        }
+    }
+}
+----
 
 == Terraform
 https://spacelift.io/blog/terraform-jenkins

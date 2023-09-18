@@ -1,3 +1,3 @@
-= Instalacja Jenkinsa w systemie Windows
+= Instalacja Jenkinsa w systemie MacOS
 
 . Zainstaluj za pomocą tutoriala z oficjalnej strony https://www.jenkins.io/doc/book/installing/macos/
